@@ -1,0 +1,18 @@
+{
+  "name": "playwright-parallel-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+     "test": "npx playwright test",
+    "test:report": "npx playwright show-report",
+    "test:shard1": "npx playwright test --shard=1/2",
+    "test:shard2": "npx playwright test --shard=2/2"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.56.0"
+  }
+}
