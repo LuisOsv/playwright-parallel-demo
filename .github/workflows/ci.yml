@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4] # 4 shards running in parallel
+        shard: [1, 2] # 2 shards running in parallel
 
     steps:
       - name: Checkout repository
