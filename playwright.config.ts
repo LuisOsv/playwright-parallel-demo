@@ -6,10 +6,7 @@ export default defineConfig({
   fullyParallel: true,
   retries: 1,
   workers: 2, // Local parallel execution; GitHub Actions can override this
-  reporter: [
-    ['blob'], // <---- required for merging
-    ['html', { outputFolder: 'playwright-report', open: 'never' }],
-  ],
+  reporter: process.env.CI ? 'blob' : 'html',
 
   use: {
     baseURL: 'https://playwright.dev',
