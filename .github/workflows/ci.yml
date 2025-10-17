@@ -63,7 +63,9 @@ jobs:
 
       - name: Merge reports
         run: |
-          npx playwright merge-reports --reporter html ./all-reports/**/playwright-report
+          echo "Folders downloaded:"
+          ls -R all-reports
+          npx playwright merge-reports --reporter html $(find all-reports -type d -name 'playwright-report')
           echo "Merged report created in playwright-report/"
 
       - name: Upload merged report
