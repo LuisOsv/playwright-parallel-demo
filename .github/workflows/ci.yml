@@ -1,0 +1,86 @@
+name: Playwright Parallel CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+   # 1️⃣ Run tests in parallel (matrix shards)
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      # The matrix defines how many parallel CI jobs (shards) we’ll run.
+      # Each shard will get a distinct portion of the test suite.
+      fail-fast: false
+      matrix:
+        shard: [1, 2] #  ← Number of shards (Example: 2 jobs = test suite split into 2 parts)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      # Each matrix job runs only a subset of tests (its shard).
+      # Workers (2) define how many tests run in parallel *within* this shard.
+      # ${{ matrix.shard }} is the current shard number (1 or 2).
+      # ${{ strategy.job-total }} is the total number of shards (2).
+      - name: Run Playwright tests (shard ${{ matrix.shard }})
+        run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }} --workers=2
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report
+          retention-days: 1
+
+  # 2️⃣ Merge Reports Job
+  merge-reports:
+    needs: [test]      # Wait until all test shards finish
+    runs-on: ubuntu-latest
+    if: always()       # Run even if one shard fails
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all reports
+        uses: actions/download-artifact@v4
+        with:
+          path: all-reports
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download blob reports from GitHub Actions Artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+
+      - name: Merge into HTML Report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report--attempt-${{ github.run_attempt }}
+          path: playwright-report
+          retention-days: 14
